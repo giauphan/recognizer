@@ -44,21 +44,11 @@ class DetectionModels:
     def __init__(self) -> None:
         # Preloading: Loading Models takes ~9 seconds
         set_num_threads(5)
-        self.executor = ThreadPoolExecutor(max_workers=5)
-        self.loading_futures: List[Future[Callable[..., None]]] = []
-
-        try:
-            self.loading_futures.append(self.executor.submit(self._load_yolo_detector))
-            self.loading_futures.append(self.executor.submit(self._load_vit_model))
-            self.loading_futures.append(self.executor.submit(self._load_vit_processor))
-            self.loading_futures.append(self.executor.submit(self._load_seg_model))
-            self.loading_futures.append(self.executor.submit(self._load_seg_processor))
-        except Exception as e:
-            if sys.version_info.minor >= 9:
-                self.executor.shutdown(wait=True, cancel_futures=True)
-            else:
-                self.executor.shutdown(wait=True)
-            raise e
+        self._load_yolo_detector()
+        self._load_vit_model()
+        self._load_vit_processor()
+        self._load_seg_model()
+        self._load_seg_processor()
 
     def _load_yolo_detector(self):
         from ultralytics import YOLO
@@ -66,32 +56,18 @@ class DetectionModels:
         self.yolo_model = YOLO("yolo11m-seg.pt")
 
     def _load_vit_model(self):
-        self.vit_model = CLIPModel.from_pretrained("flavour/CLIP-ViT-B-16-DataComp.XL-s13B-b90K", torch_dtype="auto")
+        self.vit_model = CLIPModel.from_pretrained("flavour/CLIP-ViT-B-16-DataComp.XL-s13B-b90K", device_map="cpu")
 
     def _load_vit_processor(self):
-        self.vit_processor = AutoProcessor.from_pretrained("flavour/CLIP-ViT-B-16-DataComp.XL-s13B-b90K", use_fast=true)
+        self.vit_processor = AutoProcessor.from_pretrained("flavour/CLIP-ViT-B-16-DataComp.XL-s13B-b90K")
 
     def _load_seg_model(self):
-        self.seg_model = CLIPSegForImageSegmentation.from_pretrained("CIDAS/clipseg-rd64-refined", torch_dtype="auto")
+        self.seg_model = CLIPSegForImageSegmentation.from_pretrained("CIDAS/clipseg-rd64-refined", device_map="cpu")
 
     def _load_seg_processor(self):
-        self.seg_processor = AutoProcessor.from_pretrained("CIDAS/clipseg-rd64-refined", use_fast=true)
+        self.seg_processor = AutoProcessor.from_pretrained("CIDAS/clipseg-rd64-refined")
 
-    def check_loaded(self):
-        try:
-            if not all([future.done() for future in self.loading_futures]):
-                for future in self.loading_futures:
-                    future.result()
-
-            assert self.yolo_model
-            assert self.seg_model
-            assert self.vit_model
-        except Exception as e:
-            if sys.version_info.minor >= 9:
-                self.executor.shutdown(wait=True, cancel_futures=True)
-            else:
-                self.executor.shutdown(wait=True)
-            raise e
+    
 
 
 detection_models = DetectionModels()
@@ -359,7 +335,7 @@ class Detector:
         Returns:
             List[bool], List[Tuple[int, int]]: The reCognizer Response and calculated click-coordinates for the response
         """
-        detection_models.check_loaded()
+        
 
         response = []
         coordinates: List[Tuple[int, int]] = []
