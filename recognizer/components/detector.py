@@ -66,13 +66,13 @@ class DetectionModels:
         self.yolo_model = YOLO("yolo11m-seg.pt")
 
     def _load_vit_model(self):
-        self.vit_model = CLIPModel.from_pretrained("flavour/CLIP-ViT-B-16-DataComp.XL-s13B-b90K")
+        self.vit_model = CLIPModel.from_pretrained("flavour/CLIP-ViT-B-16-DataComp.XL-s13B-b90K", torch_dtype="auto")
 
     def _load_vit_processor(self):
         self.vit_processor = AutoProcessor.from_pretrained("flavour/CLIP-ViT-B-16-DataComp.XL-s13B-b90K", use_fast=true)
 
     def _load_seg_model(self):
-        self.seg_model = CLIPSegForImageSegmentation.from_pretrained("CIDAS/clipseg-rd64-refined")
+        self.seg_model = CLIPSegForImageSegmentation.from_pretrained("CIDAS/clipseg-rd64-refined", torch_dtype="auto")
 
     def _load_seg_processor(self):
         self.seg_processor = AutoProcessor.from_pretrained("CIDAS/clipseg-rd64-refined", use_fast=true)
